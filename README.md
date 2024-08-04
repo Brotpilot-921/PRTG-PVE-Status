@@ -29,6 +29,10 @@ Free and open source: [MIT License](https://github.com/Jannos-443/PRTG-PVE-Statu
   * IncludeSnapDescription
   * IncludeSnapName
 
+**Working On**
+*  Monitor Storage
+*  Monitor Node details (CPU/RAM/Network...)
+
 ## Changelog
 
 V0.01 - initial release
