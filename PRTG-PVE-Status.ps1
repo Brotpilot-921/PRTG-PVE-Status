@@ -137,11 +137,15 @@ if (($Port -eq "") -or ($null -eq $Port)) {
 
 # Check Channel Selection
 if ((-not $channel_nodes) -and (-not $channel_nodes_detail) -and (-not $channel_snapshot) -and (-not $channel_vm) -and (-not $channel_lxc)) {
-    Write-Output "<prtg>"
-    Write-Output "<error>1</error>"
-    Write-Output "<text>please configure at least one -channel parameter</text>"
-    Write-Output "</prtg>"
-    Exit
+    $channel_nodes = $true
+    $channel_snapshot = $true
+    $channel_vm = $true
+    $channel_lxc = $true
+    #Write-Output "<prtg>"
+    #Write-Output "<error>1</error>"
+    #Write-Output "<text>please configure at least one -channel parameter</text>"
+    #Write-Output "</prtg>"
+    #Exit
 }
 
 
