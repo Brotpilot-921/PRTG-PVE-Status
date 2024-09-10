@@ -87,6 +87,12 @@ Connect to Server using API Token, ignore SelfSigned certificate and custom port
 -Server '192.168.1.100' -PORT "8888" -APITOKEN 'root@pam!prtg=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' -SkipCertCheck
 ```
 
+Show all Channel
+```powershell
+-Server '192.168.1.100' -PORT "8888" -APITOKEN 'root@pam!prtg=aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' -SkipCertCheck
+```
+![example1](media/ok.png)
+
 Show Snapshots
 ```powershell
 ... -channel_snapshot
