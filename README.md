@@ -40,19 +40,40 @@ V0.01 - initial release
 <!-- GETTING STARTED -->
 ## Getting Started
 
-1. Make sure the "Corsinvest.ProxmoxVE.Api" module exists on the Probe under the Powershell Module Path
+1. Create PVE API Token
+    - Full API Permissions 
+       - Permissions -> API Tokens -> Add
+          - User: YourUser
+          - Token ID: YourTokenName
+          - Privilege Seperation: Disable
+
+    - ReadOnly API Permission (Privilege Seperation)
+       - Permissions -> API Tokens -> Add
+          - User: YourUser
+          - Token ID: YourTokenName
+          - Privilege Seperation: Enable
+       - Permissions -> Add -> API Token Permission
+          - Path: /
+          - API Token: YourTokenName
+          - Role: PVEAuditor
+
+       ![example1](media/token.png)
+
+       ![example1](media/token_acl.png)
+
+2. Make sure the "Corsinvest.ProxmoxVE.Api" module exists on the Probe under the Powershell Module Path
    - `C:\Program Files\WindowsPowerShell\Modules\Corsinvest.ProxmoxVE.Api`
        - https://github.com/Corsinvest/cv4pve-api-powershell
        -  `Install-Module -Name Corsinvest.ProxmoxVE.Api`
 
-2. Make sure Powershell 7 is installed and available
+3. Make sure Powershell 7 is installed and available
     - `C:\Program Files\PowerShell\7\pwsh.exe`
         - https://aka.ms/powershell-release?tag=lts
         - `winget install --id Microsoft.PowerShell`
     
-3. Place `PRTG-PVE-Status.ps1` under `C:\Program Files (x86)\PRTG Network Monitor\Custom Sensors\EXEXML`
+4. Place `PRTG-PVE-Status.ps1` under `C:\Program Files (x86)\PRTG Network Monitor\Custom Sensors\EXEXML`
 
-4. Create new sensor
+5. Create new sensor
 
    | Settings | Value |
    | --- | --- |
@@ -61,7 +82,7 @@ V0.01 - initial release
    | Scanning Interval | 30 minutes |
 
 
-5. Change parameter if needed 
+6. Change parameter if needed 
    - Include/Exclude
    - Change Limits
 

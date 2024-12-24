@@ -221,6 +221,23 @@ if(-not $version.IsSuccessStatusCode){
     Write-Output "</prtg>"
     Exit
 }
+if($null -eq $version){
+    Write-Output "<prtg>"
+    Write-Output "<error>1</error>"
+    Write-Output "<text>Error getting API Response - Return is Null</text>"
+    Write-Output "</prtg>"
+    Exit
+}
+
+# Check Permission
+if((((Get-PveAccessPermissions -PveTicket $ticket).Response.data) | Get-Member -MemberType NoteProperty | Measure-Object).count -eq 0){
+    Write-Output "<prtg>"
+    Write-Output "<error>1</error>"
+    Write-Output "<text>Error - No Permissions found in Get-PveAccessPermissions - Please verify Permissions</text>"
+    Write-Output "</prtg>"
+    Exit
+}
+
 
 # NODES 
 if ($channel_nodes) {
@@ -229,6 +246,81 @@ if ($channel_nodes) {
     $NodesOnline = $Nodes | Where-Object { $_.status -eq "online" }
     $NodesOffline = $Nodes | Where-Object { $_.status -eq "offline" }
     $NodesUnkown = $Nodes | Where-Object { ($_.status -ne "online") -and ($_.status -ne "offline") } 
+
+    $Nodes_Max_CPU_AVG_5min = 0
+    $Nodes_Max_Memory = 0
+    $Nodes_Max_Root_Usage = 0
+    $Nodes_Max_io_wait = 0
+
+    foreach($Node in $NodesOnline){
+        $Node_Status = (Get-PveNodesStatus -Node $Node.node).Response.data
+
+        if($null -eq $Node_Status){
+            Return 
+        }
+
+        # Get CPU Load AVG for 5min
+        $temp_cpu_usage = ($Node_Status.loadavg[1] / $Node_status.cpuinfo.cpus) * 100
+        $temp_cpu_usage = [math]::Round($temp_cpu_usage,2)
+        if($temp_cpu_usage -gt $Nodes_Max_CPU_AVG_5min){
+            $Nodes_Max_CPU_AVG_5min = $temp_cpu_usage
+        }
+
+        # Get Memory Usage
+        $temp_memory_usage = ($Node_Status.memory.used / $Node_Status.memory.total) * 100
+        $temp_memory_usage = [math]::Round($temp_memory_usage,2)
+        if($temp_memory_usage -gt $Nodes_Max_Memory){
+            $Nodes_Max_Memory = $temp_memory_usage
+        }
+
+        # Get Root Usage
+        $temp_root_usage = ($Node_Status.rootfs.used / $Node_Status.rootfs.total) * 100
+        $temp_root_usage = [math]::Round($temp_root_usage,2)
+        if($temp_root_usage -gt $Nodes_Max_Root_Usage){
+            $Nodes_Max_Root_Usage = $temp_root_usage
+        }
+
+        # Get io Wait
+        $temp_wait= ($Node_Status.wait) * 100
+        $temp_wait = [math]::Round($temp_wait,2)
+        if($temp_wait -gt $Nodes_Max_io_wait){
+            $Nodes_Max_io_wait = $temp_wait
+        }
+    }
+    $xmlOutput += "<result>
+<channel>Node Max Memory</channel>
+<value>$($Nodes_Max_Memory)</value>
+<unit>Percent</unit>
+<float>1</float>
+<limitmode>1</limitmode>
+<LimitMaxError>90</LimitMaxError>
+</result>
+<result>
+<channel>Node Max CPU 5min</channel>
+<value>$($Nodes_Max_CPU_AVG_5min)</value>
+<unit>Percent</unit>
+<float>1</float>
+<limitmode>1</limitmode>
+<LimitMaxError>90</LimitMaxError>
+</result>
+<result>
+<channel>Node Max Root Usage</channel>
+<value>$($Nodes_Max_Root_Usage)</value>
+<unit>Percent</unit>
+<float>1</float>
+<limitmode>1</limitmode>
+<LimitMaxError>90</LimitMaxError>
+</result>
+<result>
+<channel>Node Max IO Wait</channel>
+<value>$($Nodes_Max_io_wait)</value>
+<unit>Percent</unit>
+<float>1</float>
+<limitmode>1</limitmode>
+<LimitMaxError>3</LimitMaxError>
+</result>"
+
+
     $xmlOutput += "<result>
 <channel>Nodes Online</channel>
 <value>$($NodesOnline.Count)</value>
@@ -253,6 +345,13 @@ if ($channel_nodes) {
 # SNAPSHOT
 if ($channel_snapshot) {
     $all_vms = Get-PveVm -PveTicket $ticket
+    if(($all_vms | Measure-Object).count -eq 0 ){
+        Write-Output "<prtg>"
+        Write-Output "<error>1</error>"
+        Write-Output "<text>Error In Get-PveVM - VM Count is 0</text>"
+        Write-Output "</prtg>"
+        Exit
+    }
     $SnapshotCount = 0
     $age = 0
     $age_name = ""
