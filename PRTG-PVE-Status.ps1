@@ -513,7 +513,7 @@ if ($channel_lxc) {
 if ($channel_vm) {
     $all_vms = $null
     $all_vms = Get-PveVm -PveTicket $ticket
-    $all_vms = $all_vms | Where-Object {$_.type -eq "qemu"}
+    $all_vms = $all_vms | Where-Object {($_.type -eq "qemu") -and ($_.template -eq "0")}
 
     #Node
     if ($ExcludeNode -ne "") {
