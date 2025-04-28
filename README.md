@@ -64,7 +64,7 @@ V0.01 - initial release
 2. Make sure the "Corsinvest.ProxmoxVE.Api" module exists on the Probe under the Powershell Module Path
    - `C:\Program Files\PowerShell\Modules\Corsinvest.ProxmoxVE.Api`
        - https://github.com/Corsinvest/cv4pve-api-powershell
-       -  open pwsh.exe (powershell 7) and `Install-Module -Name Corsinvest.ProxmoxVE.Api`
+       -  open pwsh.exe (powershell 7) and `Install-Module -Name Corsinvest.ProxmoxVE.Api -Scope AllUsers`
 
 3. Make sure Powershell 7 is installed and available
     - `C:\Program Files\PowerShell\7\pwsh.exe`
