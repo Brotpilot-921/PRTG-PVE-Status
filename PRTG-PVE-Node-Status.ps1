@@ -297,9 +297,8 @@ if ($channel_nodes) {
     $temp_datastores = (Get-PveNodesStorage -Node $PveNode).Response.data
     foreach ($temp_datastore in $temp_datastores){
         if(($temp_datastore.storage -eq $Datastore) -and ($temp_datastore.enabled -eq "1")){
-            $value = ($temp_datastore.used / $temp_datastore.total) * 100
-            $value = [math]::Round($value,2)
-            Write-Host $value
+            $Nodes_Max_Datastore_usage = ($temp_datastore.used / $temp_datastore.total) * 100
+            $Nodes_Max_Datastore_usage = [math]::Round($Nodes_Max_Datastore_usage,2)
         }
     }
 
@@ -322,6 +321,14 @@ if ($channel_nodes) {
 <result>
 <channel>Node Max Root Usage</channel>
 <value>$($Nodes_Max_Root_Usage)</value>
+<unit>Percent</unit>
+<float>1</float>
+<limitmode>1</limitmode>
+<LimitMaxError>90</LimitMaxError>
+</result>
+<result>
+<channel>Node Storage Usage</channel>
+<value>$($Nodes_Max_Datastore_usage)</value>
 <unit>Percent</unit>
 <float>1</float>
 <limitmode>1</limitmode>
@@ -575,7 +582,7 @@ else {
 $xmlOutput += "</prtg>"
 
 
-#Write-Output $xmlOutput
+Write-Output $xmlOutput
 
 
 <#
