@@ -26,11 +26,10 @@ param(
     [string] $APITOKEN = '',
     [switch] $SkipCertCheck,
     [string] $PveNode = "",
-    [switch] $channel_nodes,
-    [switch] $channel_nodes_detail,
-    [switch] $channel_snapshot,
-    [switch] $channel_vm,
-    [switch] $channel_lxc,
+    [switch] $skip_channel_nodes,
+    [switch] $skip_channel_snapshot,
+    [switch] $skip_channel_vm,
+    [switch] $skip_channel_lxc,
     [string] $ExcludeLXCName ='',
     [string] $ExcludeLXCTag ='',
     [string] $ExcludeVMName = '',
@@ -145,20 +144,6 @@ if (($PveNode -eq "") -or ($null -eq $PveNode)) {
     Exit
 }
 
-# Check Channel Selection
-if ((-not $channel_nodes) -and (-not $channel_nodes_detail) -and (-not $channel_snapshot) -and (-not $channel_vm) -and (-not $channel_lxc)) {
-    $channel_nodes = $true
-    $channel_snapshot = $true
-    $channel_vm = $true
-    $channel_lxc = $true
-    #Write-Output "<prtg>"
-    #Write-Output "<error>1</error>"
-    #Write-Output "<text>please configure at least one -channel parameter</text>"
-    #Write-Output "</prtg>"
-    #Exit
-}
-
-
 # Connect to Server
 try {
     #USERNAME AND PASSWORD
@@ -223,7 +208,7 @@ elseif ($login_type -eq "TOKEN") {
     }
 }
 
-$version = Get-PveVersion -PveTicket $ticket
+$version = Get-PveNodesVersion -PveTicket $ticket -Node $PveNode
 if(-not $version.IsSuccessStatusCode){
     Write-Output "<prtg>"
     Write-Output "<error>1</error>"
@@ -250,9 +235,10 @@ if((((Get-PveAccessPermissions -PveTicket $ticket).Response.data) | Get-Member -
 
 
 # NODES 
-if ($channel_nodes) {
+if ($skip_channel_nodes -ne $true) {
 
     $Node_Status = (Get-PveNodesStatus -Node $PveNode).Response.data
+    Write-Host $Node_Status
     $Node_Subscription_Status = (Get-PveNodesSubscription -Node $PveNode).Response.data
 
     $Nodes_Max_CPU_AVG_5min = 0
@@ -293,21 +279,21 @@ if ($channel_nodes) {
         $Nodes_Max_io_wait = $temp_wait
     }
 
-    # Get VM Datastore
+    # Get VM Datastores
     $temp_datastores = (Get-PveNodesStorage -Node $PveNode).Response.data
     foreach ($temp_datastore in $temp_datastores){
         $Nodes_Max_Datastore_usage = ($temp_datastore.used / $temp_datastore.total) * 100
         $Nodes_Max_Datastore_usage = [math]::Round($Nodes_Max_Datastore_usage,2)
 
         $xmlOutput += "<result>
-<channel>Node Storage $($temp_datastore.storage)</channel>
+<channel>Storage $($temp_datastore.storage)</channel>
 <value>$($Nodes_Max_Datastore_usage)</value>
 <unit>Percent</unit>
 <float>1</float>
 <limitmode>1</limitmode>
 <LimitMaxError>90</LimitMaxError>
 </result>"
-    }
+}
 
     # Check Subscription Status
     $Nodes_Subscription_Status = $null
@@ -356,12 +342,13 @@ if ($channel_nodes) {
 <channel>Subscription Status</channel>
 <value>$($Nodes_Subscription_Status)</value>
 <limitmode>1</limitmode>
-<LimitMaxError>1</LimitMaxError>
+<LimitMinError>1</LimitMinError>
+<LimitErrorMsg>No active subscription found</LimitErrorMsg>
 </result>"
 }
 
 # SNAPSHOT
-if ($channel_snapshot) {
+if ($skip_channel_snapshot -ne $true) {
     $all_vms = Get-PveVm -PveTicket $ticket -VmIdOrName "@all-$PveNode"
     <#if(($all_vms | Measure-Object).count -eq 0 ){
         Write-Output "<prtg>"
@@ -468,7 +455,7 @@ if ($channel_snapshot) {
 }
 
 # LXC
-if ($channel_lxc) {
+if ($skip_channel_lxc -ne $true) {
     $all_lxc = $null
     $all_lxc = Get-PveVm -PveTicket $ticket -VmIdOrName "@all-$PveNode"
     $all_lxc = $all_lxc | Where-Object {($_.type -eq "lxc") -and ($_.template -eq "0")}
@@ -528,7 +515,7 @@ if ($channel_lxc) {
 }
 
 # VM STATE
-if ($channel_vm) {
+if ($skip_channel_vm -ne $true) {
     $all_vms = $null
     $all_vms = Get-PveVm -PveTicket $ticket -VmIdOrName "@all-$PveNode"
     $all_vms = $all_vms | Where-Object {($_.type -eq "qemu") -and ($_.template -eq "0")}

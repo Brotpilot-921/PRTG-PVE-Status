@@ -33,8 +33,9 @@ Free and open source: [MIT License](https://github.com/Jannos-443/PRTG-PVE-Statu
 
 **Working On**
 
-*  Network usage (per node)  
-*  Cluster overview
+*  Cluster Sensor
+*  Ceph Integration
+*  Network usage (per node) 
 
 ## Changelog
 
