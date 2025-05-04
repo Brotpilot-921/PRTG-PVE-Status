@@ -38,7 +38,7 @@ Free and open source: [MIT License](https://github.com/Jannos-443/PRTG-PVE-Statu
 
 ## Changelog
 
-V0.01 - initial release
+V0.01 - initial release  
 V0.02 - Added feature to monitore storage + subscription status
 
 <!-- GETTING STARTED -->
