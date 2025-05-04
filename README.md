@@ -10,6 +10,8 @@ Free and open source: [MIT License](https://github.com/Jannos-443/PRTG-PVE-Statu
 
 **Features**
 * Monitor Node status
+* Monitor Subscription status
+* Monitor Storage
 * Monitor VM status
 * Monitor Container status
 * Monitor snapshot age
@@ -30,12 +32,14 @@ Free and open source: [MIT License](https://github.com/Jannos-443/PRTG-PVE-Statu
   * IncludeSnapName
 
 **Working On**
-*  Monitor Storage
-*  Monitor Node details (CPU/RAM/Network...)
+
+*  Network usage (per node)
+*  Cluster overview
 
 ## Changelog
 
 V0.01 - initial release
+V0.02 - Added feature to monitore storage + subscription status
 
 <!-- GETTING STARTED -->
 ## Getting Started
