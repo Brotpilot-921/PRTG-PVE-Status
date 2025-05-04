@@ -238,7 +238,6 @@ if((((Get-PveAccessPermissions -PveTicket $ticket).Response.data) | Get-Member -
 if ($skip_channel_nodes -ne $true) {
 
     $Node_Status = (Get-PveNodesStatus -Node $PveNode).Response.data
-    Write-Host $Node_Status
     $Node_Subscription_Status = (Get-PveNodesSubscription -Node $PveNode).Response.data
 
     $Nodes_Max_CPU_AVG_5min = 0
