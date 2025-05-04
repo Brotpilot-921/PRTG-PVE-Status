@@ -26,7 +26,6 @@ param(
     [string] $APITOKEN = '',
     [switch] $SkipCertCheck,
     [string] $PveNode = "",
-    [string] $Datastore = "",
     [switch] $channel_nodes,
     [switch] $channel_nodes_detail,
     [switch] $channel_snapshot,
@@ -254,6 +253,7 @@ if((((Get-PveAccessPermissions -PveTicket $ticket).Response.data) | Get-Member -
 if ($channel_nodes) {
 
     $Node_Status = (Get-PveNodesStatus -Node $PveNode).Response.data
+    $Node_Subscription_Status = (Get-PveNodesSubscription -Node $PveNode).Response.data
 
     $Nodes_Max_CPU_AVG_5min = 0
     $Nodes_Max_Memory = 0
@@ -296,10 +296,28 @@ if ($channel_nodes) {
     # Get VM Datastore
     $temp_datastores = (Get-PveNodesStorage -Node $PveNode).Response.data
     foreach ($temp_datastore in $temp_datastores){
-        if(($temp_datastore.storage -eq $Datastore) -and ($temp_datastore.enabled -eq "1")){
-            $Nodes_Max_Datastore_usage = ($temp_datastore.used / $temp_datastore.total) * 100
-            $Nodes_Max_Datastore_usage = [math]::Round($Nodes_Max_Datastore_usage,2)
-        }
+        $Nodes_Max_Datastore_usage = ($temp_datastore.used / $temp_datastore.total) * 100
+        $Nodes_Max_Datastore_usage = [math]::Round($Nodes_Max_Datastore_usage,2)
+
+        $xmlOutput += "<result>
+<channel>Node Storage $($temp_datastore.storage)</channel>
+<value>$($Nodes_Max_Datastore_usage)</value>
+<unit>Percent</unit>
+<float>1</float>
+<limitmode>1</limitmode>
+<LimitMaxError>90</LimitMaxError>
+</result>"
+    }
+
+    # Check Subscription Status
+    $Nodes_Subscription_Status = $null
+
+
+    if($Node_Subscription_Status.status -eq "active"){
+        $Nodes_Subscription_Status = "0"
+    }
+    elseif ($Node_Subscription_Status.status -eq "notfound") {
+        $Nodes_Subscription_Status = "1"
     }
 
     $xmlOutput += "<result>
@@ -327,20 +345,18 @@ if ($channel_nodes) {
 <LimitMaxError>90</LimitMaxError>
 </result>
 <result>
-<channel>Node Storage Usage</channel>
-<value>$($Nodes_Max_Datastore_usage)</value>
-<unit>Percent</unit>
-<float>1</float>
-<limitmode>1</limitmode>
-<LimitMaxError>90</LimitMaxError>
-</result>
-<result>
 <channel>Node Max IO Wait</channel>
 <value>$($Nodes_Max_io_wait)</value>
 <unit>Percent</unit>
 <float>1</float>
 <limitmode>1</limitmode>
 <LimitMaxError>3</LimitMaxError>
+</result>
+<result>
+<channel>Subscription Status</channel>
+<value>$($Nodes_Subscription_Status)</value>
+<limitmode>1</limitmode>
+<LimitMaxError>1</LimitMaxError>
 </result>"
 }
 
