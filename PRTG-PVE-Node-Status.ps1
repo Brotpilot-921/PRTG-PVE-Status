@@ -27,6 +27,7 @@ param(
     [switch] $SkipCertCheck,
     [string] $PveNode = "",
     [switch] $skip_channel_nodes,
+    [switch] $skip_subscriprion_check,
     [switch] $skip_channel_snapshot,
     [switch] $skip_channel_vm,
     [switch] $skip_channel_lxc,
@@ -238,7 +239,6 @@ if((((Get-PveAccessPermissions -PveTicket $ticket).Response.data) | Get-Member -
 if ($skip_channel_nodes -ne $true) {
 
     $Node_Status = (Get-PveNodesStatus -Node $PveNode).Response.data
-    $Node_Subscription_Status = (Get-PveNodesSubscription -Node $PveNode).Response.data
 
     $Nodes_Max_CPU_AVG_5min = 0
     $Nodes_Max_Memory = 0
@@ -278,33 +278,6 @@ if ($skip_channel_nodes -ne $true) {
         $Nodes_Max_io_wait = $temp_wait
     }
 
-    # Get VM Datastores
-    $temp_datastores = (Get-PveNodesStorage -Node $PveNode).Response.data
-    foreach ($temp_datastore in $temp_datastores){
-        $Nodes_Max_Datastore_usage = ($temp_datastore.used / $temp_datastore.total) * 100
-        $Nodes_Max_Datastore_usage = [math]::Round($Nodes_Max_Datastore_usage,2)
-
-        $xmlOutput += "<result>
-<channel>Storage $($temp_datastore.storage)</channel>
-<value>$($Nodes_Max_Datastore_usage)</value>
-<unit>Percent</unit>
-<float>1</float>
-<limitmode>1</limitmode>
-<LimitMaxError>90</LimitMaxError>
-</result>"
-}
-
-    # Check Subscription Status
-    $Nodes_Subscription_Status = $null
-
-
-    if($Node_Subscription_Status.status -eq "active"){
-        $Nodes_Subscription_Status = "0"
-    }
-    elseif ($Node_Subscription_Status.status -eq "notfound") {
-        $Nodes_Subscription_Status = "1"
-    }
-
     $xmlOutput += "<result>
 <channel>Node Max Memory</channel>
 <value>$($Nodes_Max_Memory)</value>
@@ -336,15 +309,107 @@ if ($skip_channel_nodes -ne $true) {
 <float>1</float>
 <limitmode>1</limitmode>
 <LimitMaxError>3</LimitMaxError>
-</result>
-<result>
+</result>"
+}
+
+if ($skip_subscriprion_check -ne $true) {
+    # SUBSCRIPTION STATUS
+    $Node_Subscription_Status = (Get-PveNodesSubscription -Node $PveNode).Response.data
+
+    # Check Subscription Status
+    $Nodes_Subscription_Status = $null
+
+
+    if($Node_Subscription_Status.status -eq "active"){
+        $Nodes_Subscription_Status = "0"
+    }
+    elseif ($Node_Subscription_Status.status -eq "notfound") {
+        $Nodes_Subscription_Status = "1"
+    }
+
+$xmlOutput += "<result>
 <channel>Subscription Status</channel>
 <value>$($Nodes_Subscription_Status)</value>
 <limitmode>1</limitmode>
-<LimitMinError>1</LimitMinError>
+<LimitMaxError>0</LimitMaxError>
 <LimitErrorMsg>No active subscription found</LimitErrorMsg>
 </result>"
 }
+
+# STORAGE
+$temp_datastores = (Get-PveNodesStorage -Node $PveNode).Response.data
+foreach ($temp_datastore in $temp_datastores){
+
+    $Nodes_Datastore_total = $temp_datastore.total / 1000000000
+    $Nodes_Datastore_total_unit = "GB"
+
+    if ($Nodes_Datastore_total -gt 1000) {
+        $Nodes_Datastore_total = $Nodes_Datastore_total / 1000
+        $Nodes_Datastore_total_unit = "TB"
+    }
+    $Nodes_Datastore_total = [math]::Round($Nodes_Datastore_total,2)
+
+    $Nodes_Datastore_used = $temp_datastore.used / 1000000000
+    $Nodes_Datastore_used_unit = "GB"
+
+    if ($Nodes_Datastore_used -gt 1000) {
+        $Nodes_Datastore_used = $Nodes_Datastore_used / 1000
+        $Nodes_Datastore_used_unit = "TB"
+    }
+    $Nodes_Datastore_used = [math]::Round($Nodes_Datastore_used,2)
+
+    $Nodes_Max_Datastore_usage = ($temp_datastore.used / $temp_datastore.total) * 100
+    $Nodes_Max_Datastore_usage = [math]::Round($Nodes_Max_Datastore_usage,2)
+
+    $xmlOutput += "<result>
+<channel>Storage $($temp_datastore.storage)</channel>
+<value>$($Nodes_Max_Datastore_usage)</value>
+<unit>Percent</unit>
+<float>1</float>
+<limitmode>1</limitmode>
+<LimitMaxError>90</LimitMaxError>
+</result>
+<result>
+<channel>Storage Used $($temp_datastore.storage)</channel>
+<value>$($Nodes_Datastore_used)</value>
+<unit>Custom</unit>
+<CustomUnit>$($Nodes_Datastore_used_unit)</CustomUnit>
+<float>1</float>
+</result>
+<result>
+<channel>Storage Total $($temp_datastore.storage)</channel>
+<value>$($Nodes_Datastore_total)</value>
+<unit>Custom</unit>
+<CustomUnit>$($Nodes_Datastore_total_unit)</CustomUnit>
+<float>1</float>
+</result>"
+}
+# Cluster
+$Nodes = (Get-PveNodes -PveTicket $ticket).ToData()
+$Nodes = $Nodes | Where-Object { $_.type -eq "node" }
+$NodesOnline = $Nodes | Where-Object { $_.status -eq "online" }
+$NodesOffline = $Nodes | Where-Object { $_.status -eq "offline" }
+$NodesUnkown = $Nodes | Where-Object { ($_.status -ne "online") -and ($_.status -ne "offline") } 
+
+$xmlOutput += "<result>
+<channel>Nodes Online</channel>
+<value>$($NodesOnline.Count)</value>
+<unit>Count</unit>
+</result>
+<result>
+<channel>Nodes Offline</channel>
+<value>$($NodesOffline.Count)</value>
+<unit>Count</unit>
+<limitmode>1</limitmode>
+<LimitMaxError>0</LimitMaxError>
+</result>
+<result>
+<channel>Nodes Unkown</channel>
+<value>$($NodesUnkown.Count)</value>
+<unit>Count</unit>
+<limitmode>1</limitmode>
+<LimitMaxError>0</LimitMaxError>
+</result>"
 
 # SNAPSHOT
 if ($skip_channel_snapshot -ne $true) {
