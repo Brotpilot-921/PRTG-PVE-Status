@@ -338,7 +338,7 @@ $xmlOutput += "<result>
 
 # STORAGE
 $temp_datastores = (Get-PveNodesStorage -Node $PveNode).Response.data
-foreach ($temp_datastore in $temp_datastores){
+foreach ($temp_datastore in $temp_datastores | Where-Object {$_.enabled -eq "1" -and $_.active -eq "1"}) {
 
     $Nodes_Datastore_total = $temp_datastore.total / 1000000000
     $Nodes_Datastore_total_unit = "GB"
